@@ -1,11 +1,11 @@
-import { Component, ViewContainerRef } from "@angular/core";
+import { Component } from "@angular/core";
 import { BoardService } from "./board.service";
 import { ToastrService } from "ngx-toastr";
 import { Board } from "./board";
 
 const NUMBER_OF_PLAYERS: number = 2;
 const BOARD_SIZE: number = 6;
-
+declare const Pusher: any;
 @Component({
   selector: "app-root",
   templateUrl: "./app.component.html",
@@ -23,12 +23,14 @@ export class AppComponent {
     "//" +
     location.hostname +
     (location.port ? ":" + location.port : "");
-
+  pusherChannel: any;
   constructor(
     private toastr: ToastrService,
     private boardService: BoardService
   ) {
     this.createBoards();
+    this.initializePusher();
+    this.listenForChanges();
   }
 
   fireTorpedo(e: any): AppComponent {
@@ -73,9 +75,56 @@ export class AppComponent {
     return true;
   }
 
+  initializePusher(): AppComponent {
+    let id = this.getQueryParam("id");
+    if (!id) {
+      id = this.uniqueId;
+      location.search = location.search ? "&id=" + id : "id" + id;
+    }
+    this.gameId = id;
+
+    const pusher = new Pusher("PUSHER_APP_KEY", {
+      authEndpoint: "/pusher/auth",
+      cluster: "eu"
+    });
+
+    this.pusherChannel = pusher.subscribe(this.gameId);
+    this.pusherChannel.bind("pusher:member_added", (member: any) => {
+      this.players++;
+    });
+    this.pusherChannel.bind("subscription_succeeded", (members: any) => {
+      this.players = members.count;
+      this.setPlayer(this.players);
+      this.toastr.success("Success", "Connected!");
+    });
+    this.pusherChannel.bind("pusher:member_removed", (member: any) => {
+      this.players--;
+    });
+    return this;
+  }
+
+  listenForChanges(): AppComponent {
+    this.pusherChannel.bind("channel-fire", (obj: any) => {
+      this.canPlay = !this.canPlay;
+      this.boards[obj.boardId] = obj.board;
+      this.boards[obj.playerId].player.score = obj.score;
+    });
+    return this;
+  }
+
   createBoards(): AppComponent {
     for (let i = 0; i < NUMBER_OF_PLAYERS; i++) {
       this.boardService.createBoard(BOARD_SIZE);
+    }
+    return this;
+  }
+
+  setPlayer(players: number = 0): AppComponent {
+    this.player = players - 1;
+    if (players == 1) {
+      this.canPlay = true;
+    } else if (players == 2) {
+      this.canPlay = false;
     }
     return this;
   }
@@ -86,5 +135,25 @@ export class AppComponent {
 
   get boards(): Board[] {
     return this.boardService.getBoards();
+  }
+
+  get validPlayer(): boolean {
+    return this.players >= NUMBER_OF_PLAYERS && this.player < NUMBER_OF_PLAYERS;
+  }
+
+  get uniqueId(): any {
+    return (
+      "presence-" +
+      Math.random()
+        .toString(36)
+        .substr(2, 8)
+    );
+  }
+
+  getQueryParam(name: string) : any {
+    const match = RegExp("[?&]" + name + "=([^&]*)").exec(
+      window.location.search
+    );
+    return match && decodeURIComponent(match[1].replace(/\+/g, ""));
   }
 }
