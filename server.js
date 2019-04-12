@@ -11,11 +11,11 @@ app.use(bodyParser.urlencoded({
 }));
 
 const pusher = new Pusher({
-  app_id: "705542",
-  key : "46c9f1be32afa28af4a9",
-  secret : "5f6750e3bef0744e4a25",
-  cluster : "us2",
-  useTLS : false
+  app_id: '705542',
+  key : '46c9f1be32afa28af4a9',
+  secret : '5f6750e3bef0744e4a25',
+  cluster : 'us2',
+  useTLS : true
 });
 
 app.use(express.static('./dist/'));
