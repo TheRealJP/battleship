@@ -24,7 +24,7 @@ export class BoardService {
 
     //generate ships and place randomly on board
     for (let i = 0; i < size * 2; i++) {
-      tiles = this.randomShips(tiles, size);
+      tiles = this.placeShipsOnBoardAtRandom(tiles, size);
     }
 
     // create board
@@ -38,13 +38,13 @@ export class BoardService {
     return this;
   }
 
-  randomShips(tiles: Object[], len: number): Object[] {
+  placeShipsOnBoardAtRandom(tiles: Object[], len: number): Object[] {
     len = len - 1;
     let randomRow = this.getRandomInt(0, len);
     let randomCol = this.getRandomInt(0, len);
 
     if (tiles[randomRow][randomCol].value == 1) {
-      return this.randomShips(tiles, len);
+      return this.placeShipsOnBoardAtRandom(tiles, len);
     } else {
       tiles[randomRow][randomCol].value = 1;
       return tiles;
