@@ -1,7 +1,7 @@
 import { Component } from "@angular/core";
-import { BoardService } from "./board.service";
 import { ToastrService } from "ngx-toastr";
-import { Board } from "./board";
+import { BoardService } from "./services/board.service";
+import { Board } from "./models/board";
 
 const NUMBER_OF_PLAYERS: number = 2;
 const BOARD_SIZE: number = 6;
